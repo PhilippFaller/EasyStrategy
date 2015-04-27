@@ -32,21 +32,18 @@ function render(deltaT) {
 }
 
 canvas.addEventListener("click", function (event) {
-	// var x = event.clientX - canvas.offsetLeft; 
-	// var y = event.clientY - canvas.offsetTop;
-	var pos = new Vector(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+	var mousePos = new Vector(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
 
 	objects.forEach(function(o) {
 		//checks whether clicked or not
-		if(pos.x > o.pos.x && pos.x < o.pos.x + o.width && pos.y > o.pos.y && pos.y < o.pos.y + o.height) {
+		if(mousePos.x > o.pos.x && mousePos.x < o.pos.x + o.width
+			&& mousePos.y > o.pos.y && mousePos.y < o.pos.y + o.height) {
 			o.isSelected = true;
 			selectedObject = o;
 		}
-		else
-		{
-			if(event.ctrlKey) {//control button 
-				o.goalX = pos.x;
-				o.goalY = pos.y;
+		else {
+			if(event.ctrlKey && o.isSelected) {//control button 
+				o.goal = mousePos;
 			} 
 			else {
 				o.isSelected = false;
@@ -56,12 +53,14 @@ canvas.addEventListener("click", function (event) {
 	});
 
 });
-	
  
  // classes
 function Vector(x, y) {
 	this.x = x;
 	this.y = y;
+	this.equals = function(v) {
+		return v.x === this.x && v.y === this.y;
+	};
 	this.add = function(v) {
 		return new Vector(this.x + v.x, this.y + v.y);
 	};
@@ -69,8 +68,12 @@ function Vector(x, y) {
 		return new Vector(this.x - v.x, this.y - v.y);
 	};
 	this.norm = function() {
-		return Math.sqrt(x*x + y*y);
+		return Math.sqrt(x * x + y * y);
 	};
+	this.unitVec = function() {
+		var norm = this.norm();
+		return new Vector(this.x / norm, this.y / norm) ;
+	}
 }	 
  
 function Castle(pos, owner) {
@@ -86,8 +89,7 @@ function Castle(pos, owner) {
 		g.fillStyle = "black";
 		g.beginPath();
 		g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		if(this.isSelected)
-		{
+		if(this.isSelected) {
 			g.fillStyle = "red";
 			g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
 		}
@@ -121,22 +123,21 @@ function SwordFighter(pos, owner) {
 	this.width = 10;
 	this.height = 10;
 	this.isSelected = false;
-	this.goalX = pos.x;
-	this.goalY = pos.y;
+	this.goal = pos;
 	//this.speed = 2;
 	this.update = function() {
-		if(this.pos.x < this.goalX) this.pos.x++;
-		else if(this.pos.x > this.goalX) this.pos.x--;
-		if(this.pos.y < this.goalY) this.pos.y++;
-		else if(this.pos.y > this.goalY) this.pos.y--; 
+		if(!this.pos.equals(this.goal)) {
+			var vec = this.goal.sub(this.pos).unitVec();
+			this.pos.x += vec.x;
+			this.pos.y += vec.y;
+		}
 	};
 	this.render = function(deltaT) {
 		g.fillStyle = "black";
 		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
 		g.beginPath();
 		g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		if(this.isSelected)
-		{
+		if(this.isSelected) {
 			g.fillStyle = "red";
 			g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
 		}
@@ -145,5 +146,3 @@ function SwordFighter(pos, owner) {
 }
  
 main();
-
-
