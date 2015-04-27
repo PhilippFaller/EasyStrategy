@@ -8,7 +8,7 @@ var selectedObject;
 //functions
 function main() {
 	//intit
-	objects.push(new Castle(new Vector(10, 10), 0));
+	objects.push(new Castle(new Vector(100, 100), 0));
 	objects.push(new SwordFighter(new Vector(300, 300), 0));
 	//start loop
 	loop();
@@ -55,6 +55,16 @@ canvas.addEventListener("click", function (event) {
 });
  
  // classes
+ 
+var gameObject = {
+	isInside : function(x, y) {
+		if(this.pos.x <= x && x >= this.pos.x - this.width 
+			&& this.pos.y <= y && y >= this.pos.y - this.height)
+			return true;
+		else
+			return false;
+	}
+};
 function Vector(x, y) {
 	this.x = x;
 	this.y = y;
@@ -77,6 +87,7 @@ function Vector(x, y) {
 }	 
  
 function Castle(pos, owner) {
+	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 200;
@@ -98,6 +109,7 @@ function Castle(pos, owner) {
 }
 
 function Barrack(pos, owner) {
+	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 100;
@@ -118,6 +130,7 @@ function Barrack(pos, owner) {
 }
 
 function SwordFighter(pos, owner) {
+	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 10;
@@ -128,8 +141,15 @@ function SwordFighter(pos, owner) {
 	this.update = function() {
 		if(!this.pos.equals(this.goal)) {
 			var vec = this.goal.sub(this.pos).unitVec();
-			this.pos.x += vec.x;
-			this.pos.y += vec.y;
+			for(var i = 0; i < objects.length; i++) {
+				var o = objects[i];
+				if(o != this) {
+					if(!o.prototype.isInside.call(o, this.pos.x + vec.x, this.pos.y + vec.y)) {
+						this.pos.x += vec.x;
+						this.pos.y += vec.y;
+					}
+				}
+			}
 		}
 	};
 	this.render = function(deltaT) {
