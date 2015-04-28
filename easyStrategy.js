@@ -146,14 +146,17 @@ function SwordFighter(pos, owner) {
 			var b = this.pos.y - m * (this.pos.x) ;
 			g.beginPath();
 			g.fillStyle = "black";
-			g.moveTo(this.pos.x,this.pos.y);
+			g.moveTo(0,b);
 			g.lineTo( this.goal.x,  m*this.goal.x+b);
 			g.stroke();
 			//
-			objects.forEach(function(o){
-				if(m * o.pos.x + b >= o.pos.y && m * o.pos.x + b <= o.pos.y + o.height) console.log("links");
-				//if(m * (o.pos.x + o.width) + b >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.width)console.log("rechts") ;
-			});
+			for(var i = 0; i < objects.length; i++) {
+				var o = objects[i];
+				if(o != this)
+				if(m * o.pos.x + b > o.pos.y && m * o.pos.x + b < o.pos.y + o.height) console.log("links");
+				if(m * (o.pos.x + o.width) + b >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.width)console.log("rechts") ;
+				//g.strokeRect(o.pos.x, m * o.pos.x + b, 2, 2);
+			}
 			
 			//ollis ziiiigg
 			 var vec = this.goal.sub(this.pos).unitVec();
