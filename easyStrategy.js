@@ -27,7 +27,7 @@ function update(deltaT) {
  
 function render(deltaT) {
 	g.fillStyle = "green";
-	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
+	//g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
 	objects.forEach(function(o){ o.render(deltaT) });
 }
 
@@ -58,13 +58,15 @@ canvas.addEventListener("click", function (event) {
  
 var gameObject = {
 	isInside : function(x, y) {
-		if(this.pos.x <= x && x >= this.pos.x - this.width 
-			&& this.pos.y <= y && y >= this.pos.y - this.height)
+		if(x >= this.pos.x && x <= this.pos.x + this.width 
+			&& y >= this.pos.y && y <= this.pos.y + this.height)
 			return true;
 		else
 			return false;
 	}
+	
 };
+
 function Vector(x, y) {
 	this.x = x;
 	this.y = y;
@@ -87,7 +89,6 @@ function Vector(x, y) {
 }	 
  
 function Castle(pos, owner) {
-	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 200;
@@ -107,9 +108,9 @@ function Castle(pos, owner) {
 		g.stroke();
 	};
 }
+Castle.prototype = gameObject;
 
 function Barrack(pos, owner) {
-	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 100;
@@ -128,9 +129,9 @@ function Barrack(pos, owner) {
 		g.stroke();
 	};
 }
+Barrack.prototype = gameObject;
 
 function SwordFighter(pos, owner) {
-	this.prototype = gameObject;
 	this.pos = pos;
 	this.owner = owner;
 	this.width = 10;
@@ -140,16 +141,31 @@ function SwordFighter(pos, owner) {
 	//this.speed = 2;
 	this.update = function() {
 		if(!this.pos.equals(this.goal)) {
-			var vec = this.goal.sub(this.pos).unitVec();
-			for(var i = 0; i < objects.length; i++) {
-				var o = objects[i];
-				if(o != this) {
-					if(!o.prototype.isInside.call(o, this.pos.x + vec.x, this.pos.y + vec.y)) {
-						this.pos.x += vec.x;
-						this.pos.y += vec.y;
-					}
-				}
-			}
+			//gerade
+			var m = (this.pos.y - this.goal.y) / (this.pos.x - this.goal.x);
+			var b = this.pos.y - m * (this.pos.x) ;
+			g.beginPath();
+			g.fillStyle = "black";
+			g.moveTo(this.pos.x,this.pos.y);
+			g.lineTo( this.goal.x,  m*this.goal.x+b);
+			g.stroke();
+			//
+			objects.forEach(function(o){
+				if(m * o.pos.x + b >= o.pos.y && m * o.pos.x + b <= o.pos.y + o.height) console.log("links");
+				//if(m * (o.pos.x + o.width) + b >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.width)console.log("rechts") ;
+			});
+			
+			//ollis ziiiigg
+			 var vec = this.goal.sub(this.pos).unitVec();
+			// for(var i = 0; i < objects.length; i++) {
+				// var o = objects[i];
+				// if(o != this) {
+					// if(!o.isInside(this.pos.x + vec.x, this.pos.y + vec.y)) {
+						 this.pos.x += vec.x;
+						 this.pos.y += vec.y;
+					// }
+				// }
+			// }
 		}
 	};
 	this.render = function(deltaT) {
@@ -164,5 +180,6 @@ function SwordFighter(pos, owner) {
 		g.stroke();
 	};
 }
+SwordFighter.prototype = gameObject;
  
 main();
