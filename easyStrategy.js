@@ -134,11 +134,15 @@ Barrack.prototype = gameObject;
 function SwordFighter(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.width = 10;
-	this.height = 10;
+	this.width = 32;
+	this.height = 32;
 	this.isSelected = false;
 	this.goal = pos;
+	this.path = [];
 	//this.speed = 2;
+	this.checkPath = function() {
+
+	};
 	this.update = function() {
 		if(!this.pos.equals(this.goal)) {
 			//gerade
@@ -153,9 +157,38 @@ function SwordFighter(pos, owner) {
 			for(var i = 0; i < objects.length; i++) {
 				var o = objects[i];
 				if(o != this)
-				if(m * o.pos.x + b > o.pos.y && m * o.pos.x + b < o.pos.y + o.height) console.log("links");
-				if(m * (o.pos.x + o.width) + b >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.width)console.log("rechts") ;
+/*
 				//g.strokeRect(o.pos.x, m * o.pos.x + b, 2, 2);
+		code of sides:		 _2
+				       1|_|4
+					8
+*/
+				if(((this.pos.x >= o.pos.x && this.goal.x <= o.pos.x) ||
+					 (this.goal.x >= o.pos.x && this.pos.x <= o.pos.x) &&
+				   (this.pos.y >= o.pos.y && this.goal.y <= o.pos.y) ||
+					 (this.goal.y >= o.pos.y && this.pos.y <= o.pos.y)) ||
+				   ((this.pos.x >= o.pos.x + o.width && this.goal.x <= o.pos.x + o.width) || 
+					(this.goal.x >= o.pos.x + o.width && this.pos.x <= o.pos.x + o.width)) && 
+				   (this.pos.y >= o.pos.y + o.height && this.goal.y <= o.pos.y + o.height) || 
+					(this.goal.y >= o.pos.y + o.height && this.pos.y <= o.pos.y + o.height)){
+
+					var result = 0;
+					if(m * o.pos.x + b + this.height >= o.pos.y && m * o.pos.x + b <= o.pos.y + o.height) result |= 1;
+					if(m * (o.pos.x + o.width) + b + this.height >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.height) result |= 4;
+					if((o.pos.y - b) / m >= o.pos.x && (o.pos.y - b) / m <= o.pos.x + o.width) result |= 2;
+					if((o.pos.y + o.height - b) / m >= o.pos.x && (o.pos.y + o.height - b) / m <= o.pos.x + o.width) result |= 8;
+					console.log(result);
+					switch(result){
+						case 0: break;
+						case 3: break; //links oben
+						case 5: break; //waagerecht
+						case 6: break; //rechts oben
+						case 9: break; //links unten
+						case 10: break;//horizontal
+						case 12: break;//rechts unten
+						default: console.log("Fail in collision detection");
+					}
+				}
 			}
 			
 			//ollis ziiiigg
