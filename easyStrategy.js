@@ -4,12 +4,13 @@ var g = canvas.getContext("2d"); //graphic context
 var frameRequest;	//saves id of the frame request to the window
 var objects = [];
 var selectedObject;
+var gap = 5;
 
 //functions
 function main() {
 	//intit
 	objects.push(new Castle(new Vector(100, 100), 0));
-	objects.push(new SwordFighter(new Vector(300, 300), 0));
+	objects.push(new SwordFighter(new Vector(305, 305), 0));
 	//start loop
 	loop();
 }
@@ -79,6 +80,9 @@ function Vector(x, y) {
 	this.sub = function(v) {
 		return new Vector(this.x - v.x, this.y - v.y);
 	};
+	this.mul = function(s) {
+		return new Vector(this.x * s, this.y * s);
+	};
 	this.norm = function() {
 		return Math.sqrt(x * x + y * y);
 	};
@@ -131,47 +135,35 @@ function Barrack(pos, owner) {
 }
 Barrack.prototype = gameObject;
 
-function SwordFighter(pos, owner) {
-	this.pos = pos;
-	this.owner = owner;
-	this.width = 32;
-	this.height = 32;
-	this.isSelected = false;
-	this.goal = pos;
-	this.path = [];
-	//this.speed = 2;
-	this.checkPath = function() {
-
-	};
-	this.update = function() {
-		if(!this.pos.equals(this.goal)) {
-			//gerade
-			var m = (this.pos.y - this.goal.y) / (this.pos.x - this.goal.x);
-			var b = this.pos.y - m * (this.pos.x) ;
-			g.beginPath();
-			g.fillStyle = "black";
-			g.moveTo(0,b);
-			g.lineTo( this.goal.x,  m*this.goal.x+b);
-			g.stroke();
-			//
-			for(var i = 0; i < objects.length; i++) {
-				var o = objects[i];
-				if(o != this)
-/*
-				//g.strokeRect(o.pos.x, m * o.pos.x + b, 2, 2);
-		code of sides:		 _2
-				       1|_|4
-					8
-*/
-				if(((this.pos.x >= o.pos.x && this.goal.x <= o.pos.x) ||
-					 (this.goal.x >= o.pos.x && this.pos.x <= o.pos.x) &&
-				   (this.pos.y >= o.pos.y && this.goal.y <= o.pos.y) ||
-					 (this.goal.y >= o.pos.y && this.pos.y <= o.pos.y)) ||
-				   ((this.pos.x >= o.pos.x + o.width && this.goal.x <= o.pos.x + o.width) || 
-					(this.goal.x >= o.pos.x + o.width && this.pos.x <= o.pos.x + o.width)) && 
-				   (this.pos.y >= o.pos.y + o.height && this.goal.y <= o.pos.y + o.height) || 
-					(this.goal.y >= o.pos.y + o.height && this.pos.y <= o.pos.y + o.height)){
-
+var troop = {
+	move : function(deltaT) {
+		if(this.waypoint === 0)	this.checkPath(this.goal);
+		else this.checkPath(this.waypoint);
+		var vec;
+		if(this.waypoint === 0) vec = this.goal.sub(this.pos).unitVec();
+		else vec = this.waypoint.sub(this.pos).unitVec();
+//		console.log(this.waypoint);
+		 vec.mul(deltaT / 100);
+		 this.pos.x += vec.x;
+		 this.pos.y += vec.y;
+	},
+	checkPath : function(goal) {
+		for(var i = 0; i < objects.length; i++){
+			var o = objects[i];
+			if(o != this)
+				//wenn objekt ungefähr dazwischen liegt
+				if(((this.pos.x >= o.pos.x && goal.x <= o.pos.x) ||
+					 (goal.x >= o.pos.x && this.pos.x <= o.pos.x) &&
+				   (this.pos.y >= o.pos.y && goal.y <= o.pos.y) ||
+					 (goal.y >= o.pos.y && this.pos.y <= o.pos.y)) ||
+				   ((this.pos.x >= o.pos.x + o.width && goal.x <= o.pos.x + o.width) || 
+					(goal.x >= o.pos.x + o.width && this.pos.x <= o.pos.x + o.width)) && 
+				   (this.pos.y >= o.pos.y + o.height && goal.y <= o.pos.y + o.height) || 
+					(goal.y >= o.pos.y + o.height && this.pos.y <= o.pos.y + o.height)){
+					//Gerade aufstellen
+					var m = (this.pos.y - goal.y) / (this.pos.x - goal.x);
+					var b = this.pos.y - m * (this.pos.x) ;
+					//Überprüfen welche Seite vom Rechteck geschnitten wird
 					var result = 0;
 					if(m * o.pos.x + b + this.height >= o.pos.y && m * o.pos.x + b <= o.pos.y + o.height) result |= 1;
 					if(m * (o.pos.x + o.width) + b + this.height >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.height) result |= 4;
@@ -179,29 +171,47 @@ function SwordFighter(pos, owner) {
 					if((o.pos.y + o.height - b) / m >= o.pos.x && (o.pos.y + o.height - b) / m <= o.pos.x + o.width) result |= 8;
 					console.log(result);
 					switch(result){
-						case 0: break;
-						case 3: break; //links oben
-						case 5: break; //waagerecht
-						case 6: break; //rechts oben
-						case 9: break; //links unten
-						case 10: break;//horizontal
-						case 12: break;//rechts unten
+						case 0: return; //Rekursion unterbrechen
+						case 3: this.waypoint = new Vector(o.pos.x - gap, o.pos.y - gap); break; //links oben
+						case 5:	//waagerecht
+							//Wenn waagerechter Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
+							if(this.pos.y - this.height / 2 > o.pos.y + o.height / 2)
+								this.waypoint = new Vector(o.pos.x + o.width / 2, o.pos.y + o.height + gap);
+							else
+								this.waypoint = new Vector(o.pos.x + o.width / 2, o.pos.y - gap); 
+							break; 
+						case 6: this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y - gap); break; //rechts oben
+						case 9: this.waypoint = new Vector(o.pos.x - gap, o.pos.y +o.height + gap); break; //links unten
+						case 10:  //senkrecht
+							//Wenn senkrecht Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
+							if(this.pos.x - this.width / 2 > o.pos.x + o.width / 2)
+								this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y + o.height / 2);
+							else
+								this.waypoint = new Vector(o.pos.x - gap, o.pos.y + o.height / 2); 
+							break;
+						case 12: this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y + o.height + gap); break;//rechts unten
 						default: console.log("Fail in collision detection");
-					}
+					};
+					//Rekursion
+					this.checkPath(this.waypoint);
 				}
-			}
-			
-			//ollis ziiiigg
-			 var vec = this.goal.sub(this.pos).unitVec();
-			// for(var i = 0; i < objects.length; i++) {
-				// var o = objects[i];
-				// if(o != this) {
-					// if(!o.isInside(this.pos.x + vec.x, this.pos.y + vec.y)) {
-						 this.pos.x += vec.x;
-						 this.pos.y += vec.y;
-					// }
-				// }
-			// }
+		}
+	}
+};
+troop.prototype = gameObject;
+
+function SwordFighter(pos, owner) {
+	this.pos = pos;
+	this.owner = owner;
+	this.width = 32;
+	this.height = 32;
+	this.isSelected = false;
+	this.goal = pos;
+	this.waypoint = 0;
+	
+	this.update = function(deltaT) {
+		if(!this.pos.equals(this.goal)) {
+			this.move(deltaT);
 		}
 	};
 	this.render = function(deltaT) {
@@ -216,6 +226,6 @@ function SwordFighter(pos, owner) {
 		g.stroke();
 	};
 }
-SwordFighter.prototype = gameObject;
+SwordFighter.prototype = troop;
  
 main();
