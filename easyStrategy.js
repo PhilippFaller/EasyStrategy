@@ -28,7 +28,7 @@ function update(deltaT) {
  
 function render(deltaT) {
 	g.fillStyle = "green";
-	//g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
+	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
 	objects.forEach(function(o){ o.render(deltaT) });
 }
 
@@ -57,8 +57,8 @@ canvas.addEventListener("click", function (event) {
  
  // classes
  
-var gameObject = {
-	isInside : function(x, y) {
+function GameObject () {
+	this.isInside = function(x, y) {
 		if(x >= this.pos.x && x <= this.pos.x + this.width 
 			&& y >= this.pos.y && y <= this.pos.y + this.height)
 			return true;
@@ -82,6 +82,10 @@ function Vector(x, y) {
 	};
 	this.mul = function(s) {
 		return new Vector(this.x * s, this.y * s);
+	};
+	this.plusEq = function(v) {
+		this.x += v.x;
+		this.y += v.y;
 	};
 	this.norm = function() {
 		return Math.sqrt(x * x + y * y);
@@ -112,7 +116,7 @@ function Castle(pos, owner) {
 		g.stroke();
 	};
 }
-Castle.prototype = gameObject;
+Castle.prototype = new GameObject();
 
 function Barrack(pos, owner) {
 	this.pos = pos;
@@ -133,10 +137,10 @@ function Barrack(pos, owner) {
 		g.stroke();
 	};
 }
-Barrack.prototype = gameObject;
+Barrack.prototype = new GameObject();
 
-var troop = {
-	move : function(deltaT) {
+function Troop () {
+	this.move = function(deltaT) {
 		if(this.waypoint === 0)	this.checkPath(this.goal);
 		else {
 			if(this.waypoint.sub(this.pos).norm() <= 1){
@@ -148,12 +152,20 @@ var troop = {
 		var vec;
 		if(this.waypoint === 0) vec = this.goal.sub(this.pos).unitVec();
 		else vec = this.waypoint.sub(this.pos).unitVec();
-//		console.log(this.waypoint);
 		 vec.mul(deltaT / 50);
-		 this.pos.x += vec.x;
-		 this.pos.y += vec.y;	
-	},
-	checkPath : function(goal) {
+		 vec.plusEq(this.pos);
+			for(var i = 0; i < objects.length; i++){
+				var o = objects[i];
+//				console.log(i);
+				if(this != o)
+				if(o.isInside(vec.x, vec.y) 
+						|| o.isInside(vec.x + this.width, vec.y)
+						|| o.isInside(vec.x, vec.y + this.height)
+						|| o.isInside(vec.x + this.width, vec.y + this.height)) return;
+			}	
+			this.pos = vec;
+	};
+	this.checkPath = function(goal) {
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
 			if(o != this)
@@ -175,7 +187,7 @@ var troop = {
 					if(m * (o.pos.x + o.width) + b + this.height >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.height) result |= 4;
 					if((o.pos.y - b) / m >= o.pos.x && (o.pos.y - b) / m <= o.pos.x + o.width) result |= 2;
 					if((o.pos.y + o.height - b) / m >= o.pos.x && (o.pos.y + o.height - b) / m <= o.pos.x + o.width) result |= 8;
-					console.log(result);
+//					console.log(result);
 					switch(result){
 						case 0: return; //Rekursion unterbrechen
 						case 3: this.waypoint = new Vector(o.pos.x - this.width - gap, o.pos.y - gap); break; //links oben
@@ -202,9 +214,9 @@ var troop = {
 					this.checkPath(this.waypoint);
 				}
 		}
-	}
+	};
 };
-troop.prototype = gameObject;
+Troop.prototype = new GameObject();
 
 function SwordFighter(pos, owner) {
 	this.pos = pos;
@@ -232,6 +244,6 @@ function SwordFighter(pos, owner) {
 		g.stroke();
 	};
 }
-SwordFighter.prototype = troop;
+SwordFighter.prototype = new Troop();
  
 main();
