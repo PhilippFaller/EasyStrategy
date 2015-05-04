@@ -138,14 +138,20 @@ Barrack.prototype = gameObject;
 var troop = {
 	move : function(deltaT) {
 		if(this.waypoint === 0)	this.checkPath(this.goal);
-		else this.checkPath(this.waypoint);
+		else {
+			if(this.waypoint.sub(this.pos).norm() <= 1){
+				this.waypoint = 0;
+				this.move();
+			}
+			else this.checkPath(this.waypoint);
+		}
 		var vec;
 		if(this.waypoint === 0) vec = this.goal.sub(this.pos).unitVec();
 		else vec = this.waypoint.sub(this.pos).unitVec();
 //		console.log(this.waypoint);
-		 vec.mul(deltaT / 100);
+		 vec.mul(deltaT / 50);
 		 this.pos.x += vec.x;
-		 this.pos.y += vec.y;
+		 this.pos.y += vec.y;	
 	},
 	checkPath : function(goal) {
 		for(var i = 0; i < objects.length; i++){
@@ -172,7 +178,7 @@ var troop = {
 					console.log(result);
 					switch(result){
 						case 0: return; //Rekursion unterbrechen
-						case 3: this.waypoint = new Vector(o.pos.x - gap, o.pos.y - gap); break; //links oben
+						case 3: this.waypoint = new Vector(o.pos.x - this.width - gap, o.pos.y - gap); break; //links oben
 						case 5:	//waagerecht
 							//Wenn waagerechter Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
 							if(this.pos.y - this.height / 2 > o.pos.y + o.height / 2)
@@ -181,7 +187,7 @@ var troop = {
 								this.waypoint = new Vector(o.pos.x + o.width / 2, o.pos.y - gap); 
 							break; 
 						case 6: this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y - gap); break; //rechts oben
-						case 9: this.waypoint = new Vector(o.pos.x - gap, o.pos.y +o.height + gap); break; //links unten
+						case 9: this.waypoint = new Vector(o.pos.x - this.width - gap, o.pos.y +o.height + gap); break; //links unten
 						case 10:  //senkrecht
 							//Wenn senkrecht Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
 							if(this.pos.x - this.width / 2 > o.pos.x + o.width / 2)
