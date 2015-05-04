@@ -4,7 +4,9 @@ var g = canvas.getContext("2d"); //graphic context
 var frameRequest;	//saves id of the frame request to the window
 var objects = [];
 var selectedObject;
-var gap = 5;
+//var gap = 5;
+var TWO_PI = 2 * Math.PI;
+var lastTime = 0;
 
 //functions
 function main() {
@@ -15,11 +17,12 @@ function main() {
 	loop();
 }
 
-function loop(deltaT) {
+function loop(time) {
 	frameRequest = window.requestAnimationFrame(loop);		//request next frame
-
+	var deltaT = time - lastTime;
 	update(deltaT); 
 	render(deltaT);	
+	lastTime = time;
 }
  
 function update(deltaT) {
@@ -28,7 +31,8 @@ function update(deltaT) {
  
 function render(deltaT) {
 	g.fillStyle = "green";
-	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
+//	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
+	g.fillRect(0, 0, canvas.width, canvas.height);
 	objects.forEach(function(o){ o.render(deltaT) });
 }
 
@@ -37,34 +41,33 @@ canvas.addEventListener("click", function (event) {
 
 	objects.forEach(function(o) {
 		//checks whether clicked or not
-		if(mousePos.x > o.pos.x && mousePos.x < o.pos.x + o.width
-			&& mousePos.y > o.pos.y && mousePos.y < o.pos.y + o.height) {
+		if(o.contains(mousePos)) {
 			o.isSelected = true;
 			selectedObject = o;
 		}
 		else {
 			if(event.ctrlKey && o.isSelected) {//control button 
-				o.goal = mousePos;
+				o.setGoal(mousePos);
 			} 
 			else {
 				o.isSelected = false;
-				selectedObject = undefined;
+				selectedObject = undefined; //TODO warum springt er hier hin?!
 			}
 		}
 	});
 
 });
+
+function between(nStart, nBetween, nEnd){
+	return (nStart <= nBetween && nBetween <= nEnd) || (nEnd <= nBetween && nBetween <= nStart);
+}
  
  // classes
  
 function GameObject () {
-	this.isInside = function(x, y) {
-		if(x >= this.pos.x && x <= this.pos.x + this.width 
-			&& y >= this.pos.y && y <= this.pos.y + this.height)
-			return true;
-		else
-			return false;
-	}
+	this.contains = function(pos) {
+		return pos.sub(this.pos).qNorm() <= this.sqrRadius;
+	};
 	
 };
 
@@ -83,12 +86,18 @@ function Vector(x, y) {
 	this.mul = function(s) {
 		return new Vector(this.x * s, this.y * s);
 	};
-	this.plusEq = function(v) {
+	this.addEq = function(v) {
 		this.x += v.x;
 		this.y += v.y;
 	};
+	this.dotP = function(v) {
+		return this.x * v.x + this.y * v.y
+	};
 	this.norm = function() {
-		return Math.sqrt(x * x + y * y);
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	};
+	this.qNorm = function() {
+		return this.x * this.x + this.y * this.y;
 	};
 	this.unitVec = function() {
 		var norm = this.norm();
@@ -99,21 +108,18 @@ function Vector(x, y) {
 function Castle(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.width = 200;
-	this.height = 200;
+	this.radius = 75;
+	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 
 	this.update = function(){};
 	this.render = function(deltaT) {
-		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
-		g.fillStyle = "black";
+//		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
 		g.beginPath();
-		g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		if(this.isSelected) {
-			g.fillStyle = "red";
-			g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		}
-		g.stroke();
+		if(this.isSelected)	g.fillStyle = "red";
+		else g.fillStyle = "black";
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		g.fill();
 	};
 }
 Castle.prototype = new GameObject();
@@ -121,99 +127,38 @@ Castle.prototype = new GameObject();
 function Barrack(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.width = 100;
-	this.height = 100;
+	this.radius = 50;
+	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.update = function(){};
 	this.render = function(deltaT) {
-		g.fillStyle = "black";
-		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
 		g.beginPath();
-		g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		if(this.isSelected) {
-			g.fillStyle = "red";
-			g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		}
-		g.stroke();
+		if(this.isSelected)	g.fillStyle = "red";
+		else g.fillStyle = "black";
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		g.fill();
 	};
 }
 Barrack.prototype = new GameObject();
 
 function Troop () {
 	this.move = function(deltaT) {
-		if(this.waypoint === 0)	this.checkPath(this.goal);
-		else {
-			if(this.waypoint.sub(this.pos).norm() <= 1){
-				this.waypoint = 0;
-				this.move();
-			}
-			else this.checkPath(this.waypoint);
-		}
-		var vec;
-		if(this.waypoint === 0) vec = this.goal.sub(this.pos).unitVec();
-		else vec = this.waypoint.sub(this.pos).unitVec();
-		 vec.mul(deltaT / 50);
-		 vec.plusEq(this.pos);
-			for(var i = 0; i < objects.length; i++){
-				var o = objects[i];
-//				console.log(i);
-				if(this != o)
-				if(o.isInside(vec.x, vec.y) 
-						|| o.isInside(vec.x + this.width, vec.y)
-						|| o.isInside(vec.x, vec.y + this.height)
-						|| o.isInside(vec.x + this.width, vec.y + this.height)) return;
-			}	
-			this.pos = vec;
+		var delta = this.goal.sub(this.pos);
+		if(delta.norm() <= 3) this.goal = this.pos;
+		else this.pos.addEq(this.goal.sub(this.pos).unitVec().mul(deltaT / 15));
 	};
 	this.checkPath = function(goal) {
+
+	};
+	this.setGoal = function(goal) {
+//		this.goal = new Vector(goal.x - this.width / 2, goal.y - this.height / 2);
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
-			if(o != this)
-				//wenn objekt ungefähr dazwischen liegt
-				if(((this.pos.x >= o.pos.x && goal.x <= o.pos.x) ||
-					 (goal.x >= o.pos.x && this.pos.x <= o.pos.x) &&
-				   (this.pos.y >= o.pos.y && goal.y <= o.pos.y) ||
-					 (goal.y >= o.pos.y && this.pos.y <= o.pos.y)) ||
-				   ((this.pos.x >= o.pos.x + o.width && goal.x <= o.pos.x + o.width) || 
-					(goal.x >= o.pos.x + o.width && this.pos.x <= o.pos.x + o.width)) && 
-				   (this.pos.y >= o.pos.y + o.height && goal.y <= o.pos.y + o.height) || 
-					(goal.y >= o.pos.y + o.height && this.pos.y <= o.pos.y + o.height)){
-					//Gerade aufstellen
-					var m = (this.pos.y - goal.y) / (this.pos.x - goal.x);
-					var b = this.pos.y - m * (this.pos.x) ;
-					//Überprüfen welche Seite vom Rechteck geschnitten wird
-					var result = 0;
-					if(m * o.pos.x + b + this.height >= o.pos.y && m * o.pos.x + b <= o.pos.y + o.height) result |= 1;
-					if(m * (o.pos.x + o.width) + b + this.height >= o.pos.y && m * (o.pos.x + o.width) + b <= o.pos.y + o.height) result |= 4;
-					if((o.pos.y - b) / m >= o.pos.x && (o.pos.y - b) / m <= o.pos.x + o.width) result |= 2;
-					if((o.pos.y + o.height - b) / m >= o.pos.x && (o.pos.y + o.height - b) / m <= o.pos.x + o.width) result |= 8;
-//					console.log(result);
-					switch(result){
-						case 0: return; //Rekursion unterbrechen
-						case 3: this.waypoint = new Vector(o.pos.x - this.width - gap, o.pos.y - gap); break; //links oben
-						case 5:	//waagerecht
-							//Wenn waagerechter Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
-							if(this.pos.y - this.height / 2 > o.pos.y + o.height / 2)
-								this.waypoint = new Vector(o.pos.x + o.width / 2, o.pos.y + o.height + gap);
-							else
-								this.waypoint = new Vector(o.pos.x + o.width / 2, o.pos.y - gap); 
-							break; 
-						case 6: this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y - gap); break; //rechts oben
-						case 9: this.waypoint = new Vector(o.pos.x - this.width - gap, o.pos.y +o.height + gap); break; //links unten
-						case 10:  //senkrecht
-							//Wenn senkrecht Schnitt unter der Hälfte des Objekts liegt, unten rum laufen
-							if(this.pos.x - this.width / 2 > o.pos.x + o.width / 2)
-								this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y + o.height / 2);
-							else
-								this.waypoint = new Vector(o.pos.x - gap, o.pos.y + o.height / 2); 
-							break;
-						case 12: this.waypoint = new Vector(o.pos.x + o.width + gap, o.pos.y + o.height + gap); break;//rechts unten
-						default: console.log("Fail in collision detection");
-					};
-					//Rekursion
-					this.checkPath(this.waypoint);
-				}
+			if( o.contains(goal)){
+				goal = o.pos.add(goal.sub(o.pos).norm().mul(o.radius + 1));
+			}
 		}
+		this.goal = goal;
 	};
 };
 Troop.prototype = new GameObject();
@@ -221,11 +166,11 @@ Troop.prototype = new GameObject();
 function SwordFighter(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.width = 32;
-	this.height = 32;
+	this.radius = 16;
+	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.goal = pos;
-	this.waypoint = 0;
+	this.waypoint;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
@@ -233,15 +178,11 @@ function SwordFighter(pos, owner) {
 		}
 	};
 	this.render = function(deltaT) {
-		g.fillStyle = "black";
-		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
 		g.beginPath();
-		g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		if(this.isSelected) {
-			g.fillStyle = "red";
-			g.fillRect(this.pos.x, this.pos.y, this.width, this.height);
-		}
-		g.stroke();
+		if(this.isSelected)	g.fillStyle = "red";
+		else g.fillStyle = "black";
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		g.fill();
 	};
 }
 SwordFighter.prototype = new Troop();
