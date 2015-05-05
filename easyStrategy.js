@@ -1,10 +1,11 @@
 //Globals
 var canvas = document.getElementById("canvas");
 var g = canvas.getContext("2d"); //graphic context
+g.lineWidth = 2;
 var frameRequest;	//saves id of the frame request to the window
 var objects = [];
 var selectedObject;
-//var gap = 5;
+var gap = 5;
 var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
 var rigthVec = new Vector(1, 0);
@@ -42,14 +43,13 @@ canvas.addEventListener("click", function (event) {
 
 	objects.forEach(function(o) {
 		//checks whether clicked or not
-		if(o.contains(mousePos)) {
-			o.isSelected = true;
-			selectedObject = o;
-		}
-		else {
-			if(event.ctrlKey && o.isSelected) {//control button 
-				o.setGoal(mousePos);
-			} 
+		if(event.ctrlKey){//control button 
+			if(o.isSelected) o.setGoal(mousePos);
+		} else{
+			if(o.contains(mousePos)) {
+				o.isSelected = true;
+				selectedObject = o;
+			}
 			else {
 				o.isSelected = false;
 				selectedObject = undefined; //TODO warum springt er hier hin?!
@@ -146,12 +146,9 @@ function Troop () {
 	this.move = function(deltaT) {
 		if(this.goal.sub(this.pos).norm() <= 3) this.waypoint = this.goal = this.pos;
 		else{
-			if(this.waypoint.sub(this.pos).norm() <= 3) this.waypoint = this.goal;
+			if(this.waypoint.sub(this.pos).norm() <= 3) this.setWaypoint(this.goal);
 			this.checkPath(this.waypoint);
-			var movement = this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15)
-			this.angle = Math.acos(movement.dotP(rigthVec) / movement.norm());
-			if(movement.y < 0) this.angle = 2 * Math.PI - this.angle;
-			this.pos.addEq(movement);
+			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15));
 		}
 	};
 	this.checkPath = function(goal) {
@@ -168,7 +165,7 @@ function Troop () {
 					|| goal.x <= xIntersection && xIntersection <= this.pos.x){
 					var diff = (new Vector(xIntersection, yIntersection)).sub(o.pos); 
 					if(diff.norm() <= (o.radius + this.radius)){
-						this.waypoint = o.pos.add(diff.unitVec().mul(this.radius + o.radius + 5));
+						this.setWaypoint(o.pos.add(diff.unitVec().mul(this.radius + o.radius + gap)));
 //						g.startPath();
 //						g.arc(this.waypoint.x, this.waypoint.y, 3, 0, TWO_PI);
 //						g.fill();
@@ -185,10 +182,18 @@ function Troop () {
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
 			if( o.contains(goal)){
-				goal = o.pos.add(goal.sub(o.pos).norm().mul(o.radius + 1));
+				goal = o.pos.add(goal.sub(o.pos).unitVec().mul(o.radius + this.radius +  gap));
 			}
 		}
-		this.goal = this.waypoint = goal;
+		this.goal = goal;
+		this.setWaypoint(goal);
+	};
+	this.setWaypoint = function(waypoint) {
+		this.waypoint = waypoint;
+		var movement = this.waypoint.sub(this.pos);
+		this.angle = Math.acos(movement.dotP(rigthVec) / movement.norm());
+		if(movement.y < 0) this.angle = TWO_PI - this.angle;
+
 	};
 };
 Troop.prototype = new GameObject();
@@ -209,11 +214,14 @@ function SwordFighter(pos, owner) {
 		}
 	};
 	this.render = function(deltaT) {
-//		g.beginPath();
-//		if(this.isSelected)	g.fillStyle = "red";
+		if(this.isSelected){
+			g.strokeStyle = "red";
+			g.beginPath();
+			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+			g.stroke();
+		}
 //		else g.fillStyle = "black";
-//		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-//		g.fill();
+		
 		g.save();
 		g.translate(this.pos.x, this.pos.y);
 		g.rotate(this.angle);
