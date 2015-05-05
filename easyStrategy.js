@@ -7,6 +7,7 @@ var selectedObject;
 //var gap = 5;
 var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
+var rigthVec = new Vector(1, 0);
 
 //functions
 function main() {
@@ -147,7 +148,10 @@ function Troop () {
 		else{
 			if(this.waypoint.sub(this.pos).norm() <= 3) this.waypoint = this.goal;
 			this.checkPath(this.waypoint);
-			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15));
+			var movement = this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15)
+			this.angle = Math.acos(movement.dotP(rigthVec) / movement.norm());
+			if(movement.y < 0) this.angle = 2 * Math.PI - this.angle;
+			this.pos.addEq(movement);
 		}
 	};
 	this.checkPath = function(goal) {
@@ -197,6 +201,7 @@ function SwordFighter(pos, owner) {
 	this.isSelected = false;
 	this.goal = pos;
 	this.waypoint = this.goal;
+	this.angle = 0;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
@@ -204,13 +209,20 @@ function SwordFighter(pos, owner) {
 		}
 	};
 	this.render = function(deltaT) {
-		g.beginPath();
-		if(this.isSelected)	g.fillStyle = "red";
-		else g.fillStyle = "black";
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-		g.fill();
+//		g.beginPath();
+//		if(this.isSelected)	g.fillStyle = "red";
+//		else g.fillStyle = "black";
+//		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+//		g.fill();
+		g.save();
+		g.translate(this.pos.x, this.pos.y);
+		g.rotate(this.angle);
+		g.drawImage(swordFighterImg, -this.radius, -this.radius);
+		g.restore();
 	};
 }
 SwordFighter.prototype = new Troop();
+var swordFighterImg = new Image();
+swordFighterImg.src = "/home/philipp/workspace/EasyStrategy/swordfighter.png";
  
 main();
