@@ -11,7 +11,7 @@ var lastTime = 0;
 //functions
 function main() {
 	//intit
-	objects.push(new Castle(new Vector(100, 100), 0));
+	objects.push(new Castle(new Vector(200, 200), 0));
 	objects.push(new SwordFighter(new Vector(305, 305), 0));
 	//start loop
 	loop();
@@ -143,12 +143,33 @@ Barrack.prototype = new GameObject();
 
 function Troop () {
 	this.move = function(deltaT) {
-		var delta = this.goal.sub(this.pos);
-		if(delta.norm() <= 3) this.goal = this.pos;
-		else this.pos.addEq(this.goal.sub(this.pos).unitVec().mul(deltaT / 15));
+		if(this.goal.sub(this.pos) <= 3) this.waypoint = this.goal = this.pos;
+		else{
+			this.checkPath(this.goal);
+			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15));
+		}
 	};
 	this.checkPath = function(goal) {
+		var m = (goal.y - this.pos.y) / (goal.x - this.pos.x);
+		var b = this.pos.y - m * this.pos.x;
+		var m1 = -1 / m;
+		for(var i = 0; i < objects.length; i++){
+			var o = objects[i];
+			if(o != this){
+				var b1 = o.pos.y - m1 * o.pos.x;
+				var xIntersection = (b1 - b) / (m - m1);
+				var yIntersection = m1 * xIntersection + b1;
+				if((this.pos.x <= xIntersection && xIntersection <= goal.x) 
+					|| goal.x <= xIntersection && xIntersection <= this.pos.x){
+					var diff = o.pos.sub(new Vector(xIntersection, yIntersection)); 
+					if(diff.qNorm() <= o.sqrRadius){
+						this.waypoint = o.pos.add(diff.unitVec().mul(this.radius + o.radius));
+					}
+					
+				}
+			}
 
+		}
 	};
 	this.setGoal = function(goal) {
 //		this.goal = new Vector(goal.x - this.width / 2, goal.y - this.height / 2);
@@ -170,7 +191,7 @@ function SwordFighter(pos, owner) {
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.goal = pos;
-	this.waypoint;
+	this.waypoint = this.goal;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
