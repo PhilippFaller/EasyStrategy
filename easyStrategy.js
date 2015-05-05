@@ -143,9 +143,10 @@ Barrack.prototype = new GameObject();
 
 function Troop () {
 	this.move = function(deltaT) {
-		if(this.goal.sub(this.pos) <= 3) this.waypoint = this.goal = this.pos;
+		if(this.goal.sub(this.pos).norm() <= 3) this.waypoint = this.goal = this.pos;
 		else{
-			this.checkPath(this.goal);
+			if(this.waypoint.sub(this.pos).norm() <= 3) this.waypoint = this.goal;
+			this.checkPath(this.waypoint);
 			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15));
 		}
 	};
@@ -161,9 +162,13 @@ function Troop () {
 				var yIntersection = m1 * xIntersection + b1;
 				if((this.pos.x <= xIntersection && xIntersection <= goal.x) 
 					|| goal.x <= xIntersection && xIntersection <= this.pos.x){
-					var diff = o.pos.sub(new Vector(xIntersection, yIntersection)); 
-					if(diff.qNorm() <= o.sqrRadius){
-						this.waypoint = o.pos.add(diff.unitVec().mul(this.radius + o.radius));
+					var diff = (new Vector(xIntersection, yIntersection)).sub(o.pos); 
+					if(diff.norm() <= (o.radius + this.radius)){
+						this.waypoint = o.pos.add(diff.unitVec().mul(this.radius + o.radius + 5));
+//						g.startPath();
+//						g.arc(this.waypoint.x, this.waypoint.y, 3, 0, TWO_PI);
+//						g.fill();
+						this.checkPath(this.waypoint)
 					}
 					
 				}
@@ -179,7 +184,7 @@ function Troop () {
 				goal = o.pos.add(goal.sub(o.pos).norm().mul(o.radius + 1));
 			}
 		}
-		this.goal = goal;
+		this.goal = this.waypoint = goal;
 	};
 };
 Troop.prototype = new GameObject();
