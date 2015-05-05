@@ -15,6 +15,7 @@ function main() {
 	//intit
 	objects.push(new Castle(new Vector(200, 200), 0));
 	objects.push(new SwordFighter(new Vector(305, 305), 0));
+	objects.push(new SwordFighter(new Vector(400, 400), 1))
 	//start loop
 	loop();
 }
@@ -144,7 +145,20 @@ Barrack.prototype = new GameObject();
 
 function Troop () {
 	this.move = function(deltaT) {
-		if(this.goal.sub(this.pos).norm() <= 3) this.waypoint = this.goal = this.pos;
+//		if(this.enemy != undefined){
+//			var v = new Vector(this.enemy.pos.x, this.enemy.pos.y);
+//			this.goal = v;
+//			this.waypoint = v;
+//		}
+//		console.log(this.pos.x + " " + this.pos.y);
+		if(this.goal.sub(this.pos).norm() <= 3){
+			this.waypoint = this.goal = this.pos;
+			if(this.enemy != undefined){
+				var movement = this.enemy.pos.sub(this.pos);
+				this.angle = Math.acos(movement.dotP(rigthVec) / movement.norm());
+				if(movement.y < 0) this.angle = TWO_PI - this.angle;
+			}
+		}
 		else{
 			if(this.waypoint.sub(this.pos).norm() <= 3) this.setWaypoint(this.goal);
 			this.checkPath(this.waypoint);
@@ -163,7 +177,7 @@ function Troop () {
 				var yIntersection = m1 * xIntersection + b1;
 				if((this.pos.x <= xIntersection && xIntersection <= goal.x) 
 					|| goal.x <= xIntersection && xIntersection <= this.pos.x){
-					var diff = (new Vector(xIntersection, yIntersection)).sub(o.pos); 
+					var diff = (new Vector(xIntersection, yIntersection)).sub(o.pos);
 					if(diff.norm() <= (o.radius + this.radius)){
 						this.setWaypoint(o.pos.add(diff.unitVec().mul(this.radius + o.radius + gap)));
 //						g.startPath();
@@ -183,7 +197,9 @@ function Troop () {
 			var o = objects[i];
 			if( o.contains(goal)){
 				goal = o.pos.add(goal.sub(o.pos).unitVec().mul(o.radius + this.radius +  gap));
+				if(o.owner != this.owner) this.enemy = o;
 			}
+			else this.enemy = undefined;
 		}
 		this.goal = goal;
 		this.setWaypoint(goal);
@@ -207,11 +223,14 @@ function SwordFighter(pos, owner) {
 	this.goal = pos;
 	this.waypoint = this.goal;
 	this.angle = 0;
+	this.life = 100;
+	this.enemy = undefined;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
 			this.move(deltaT);
 		}
+//		this.attack(deltaT);
 	};
 	this.render = function(deltaT) {
 		if(this.isSelected){
@@ -220,13 +239,14 @@ function SwordFighter(pos, owner) {
 			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
 			g.stroke();
 		}
-//		else g.fillStyle = "black";
-		
 		g.save();
 		g.translate(this.pos.x, this.pos.y);
 		g.rotate(this.angle);
 		g.drawImage(swordFighterImg, -this.radius, -this.radius);
 		g.restore();
+	};
+	this.attack = function(deltaT) {
+			this.enemy.life -= deltaT / 50;
 	};
 }
 SwordFighter.prototype = new Troop();
