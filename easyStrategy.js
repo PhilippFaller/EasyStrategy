@@ -72,8 +72,7 @@ function GameObject () {
 	};
 	this.collides = function(pos, radius) {
 		return pos.sub(this.pos).norm() <= this.radius + radius;
-	}
-	
+	};	
 };
 
 function Vector(x, y) {
@@ -169,6 +168,7 @@ function Troop () {
 		}
 	};
 	this.checkPath = function(goal) {
+//		console.log(this.pos.x);
 		var m = (goal.y - this.pos.y) / (goal.x - this.pos.x);
 		var b = this.pos.y - m * this.pos.x;
 		var m1 = -1 / m;
@@ -193,6 +193,7 @@ function Troop () {
 			}
 
 		}
+//		console.log(this.pos.x);
 	};
 	this.setGoal = function(goal) {
 //		this.goal = new Vector(goal.x - this.width / 2, goal.y - this.height / 2);
@@ -233,7 +234,7 @@ function SwordFighter(pos, owner) {
 		if(!this.pos.equals(this.goal)) {
 			this.move(deltaT);
 		}
-//		this.attack(deltaT);
+		this.attack(deltaT);
 	};
 	this.render = function(deltaT) {
 		if(this.isSelected){
@@ -245,11 +246,21 @@ function SwordFighter(pos, owner) {
 		g.save();
 		g.translate(this.pos.x, this.pos.y);
 		g.rotate(this.angle);
-		g.drawImage(swordFighterImg, -this.radius, -this.radius);
+		g.drawImage(swordFighterImg, - this.radius, -this.radius);
 		g.restore();
 	};
 	this.attack = function(deltaT) {
-			this.enemy.life -= deltaT / 50;
+		if(this.enemy != undefined){
+			if(this.pos.sub(this.enemy.pos).norm() <= this.radius + this.enemy.radius + 2 * gap){
+				this.enemy.life -= deltaT / 40;
+//				console.log(this.life);
+				if(this.enemy.life <= 0){
+					objects.splice(objects.indexOf(this.enemy),1);
+					this.enemy = undefined;
+				} 
+					
+			}
+		}
 	};
 }
 SwordFighter.prototype = new Troop();
