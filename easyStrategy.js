@@ -1,9 +1,10 @@
 //Globals
 var canvas = document.getElementById("myCanvas");
-//canvas.width  = window.innerWidth ;
-//canvas.height = window.innerHeight;
+canvas.width  = window.innerWidth ;
+canvas.height = window.innerHeight;
 var g = canvas.getContext("2d"); //graphic context
 g.lineWidth = 2;
+g.font = "20px Arial";
 var frameRequest;	//saves id of the frame request to the window
 var objects = [];
 var selectedObject;
@@ -11,13 +12,16 @@ var gap = 5;
 var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
 var rigthVec = new Vector(1, 0);
+var money = 200;
 
 //functions
 function main() {
 	//intit
-	objects.push(new Castle(new Vector(200, 200), 0));
+	objects.push(new Castle(new Vector(200, 200), 1));
 	objects.push(new SwordFighter(new Vector(305, 305), 1));
-	objects.push(new SwordFighter(new Vector(400, 400), 2))
+	objects.push(new SwordFighter(new Vector(400, 400), 2));
+//	g.fillStyle = "green";
+//	g.fillRect(0, 0, canvas.width, canvas.height);
 	//start loop
 	loop();
 }
@@ -39,11 +43,17 @@ function render(deltaT) {
 //	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
 	g.fillRect(0, 0, canvas.width, canvas.height);
 	objects.forEach(function(o){ o.render(deltaT) });
+	g.fillStyle = "yellow";
+	g.beginPath();
+	g.arc(30, 30, 10, 0, TWO_PI);
+	g.fill()
+	g.fillStyle = "black";
+	g.fillText(Math.floor(money), 45, 40);
 }
 
 canvas.addEventListener("click", function (event) {
 	var mousePos = new Vector(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
-
+//console.log(mousePos);
 	objects.forEach(function(o) {
 		//checks whether clicked or not
 		if(event.ctrlKey){//control button 
@@ -117,6 +127,7 @@ function GameObject () {
 		if(this.owner === 1) g.strokeStyle = "blue";
 		else g.strokeStyle = "red";
 		if(this.isSelected){
+			g.fillStyle = "blue";
 			g.beginPath();
 			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
 			g.fill();
@@ -135,21 +146,18 @@ function GameObject () {
 function Castle(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.radius = 75;
+	this.radius = 64;
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
+	this.life = 100;
 
-	this.update = function(){};
-	this.render = function(deltaT) {
-//		g.clearRect(this.pos.x, this.pos.y, this.width, this.height);
-		g.beginPath();
-		if(this.isSelected)	g.fillStyle = "red";
-		else g.fillStyle = "black";
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-		g.fill();
+	this.update = function(deltaT){
+		if(deltaT) money += deltaT / 2000;
 	};
 }
 Castle.prototype = new GameObject();
+Castle.prototype.img = new Image();
+Castle.prototype.img.src = "castle.png";
 
 function Barrack(pos, owner) {
 	this.pos = pos;
