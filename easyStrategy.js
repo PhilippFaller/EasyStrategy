@@ -13,6 +13,8 @@ var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
 var rigthVec = new Vector(1, 0);
 var money = 200;
+var coin = new Image();
+coin.src = "coin.png";
 var mouse = new Vector(0, 0);
 var nextBuilding = undefined;
 
@@ -56,10 +58,7 @@ function render(deltaT) {
 	}
 	
 	//money
-	g.fillStyle = "yellow";
-	g.beginPath();
-	g.arc(30, 30, 10, 0, TWO_PI);
-	g.fill()
+	g.drawImage(coin, 15, 15);
 	g.fillStyle = "black";
 	g.fillText(Math.floor(money), 45, 40);
 }
@@ -186,9 +185,11 @@ function MenuItem(pos, constructor, cost) {
 	this.render = function (deltaT) {
 		g.fillStyle = "white";
 		g.beginPath();
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		if(this.radius != 32) g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		else g.arc(this.pos.x, this.pos.y, 16, 0, TWO_PI);
 		g.fill();
-		g.drawImage(this.img, this.pos.x - this.radius / 2, this.pos.y - this.radius / 2, this.radius, this.radius);
+		if(this.radius != 16) g.drawImage(this.img, this.pos.x - this.radius / 2, this.pos.y - this.radius / 2, this.radius, this.radius);
+		else g.drawImage(this.img, this.pos.x - this.radius, this.pos.y - this.radius);
 	};
 }
 MenuItem.prototype = new GameObject();
@@ -231,9 +232,9 @@ function Castle(pos, owner) {
 		}
 		if(this.isSelected){
 			this.item1 = new MenuItem(
-					this.pos.sub(new Vector(30, 30)), Barrack, 200);
+					this.pos.sub(new Vector(20, 20)), Barrack, 200);
 			this.item2 = new MenuItem(
-					this.pos.sub(new Vector(-30, -30)), House, 100);
+					this.pos.sub(new Vector(-20, -20)), House, 100);
 		}
 		else{
 			if(this.item1 != undefined) {
@@ -285,8 +286,8 @@ function Barrack(pos, owner) {
 		if(this.isSelected){
 			this.items[0] = (new MenuItem(this.pos.sub(new Vector(20, 20)), SwordFighter, 200));
 			this.items[1] = (new MenuItem(this.pos.sub(new Vector(-20, -20)), Archer, 100));
-//			this.items[2] = (new MenuItem(this.pos.sub(new Vector(-20, 20)), Archer, 100));
-//			this.items[3] = (new MenuItem(this.pos.sub(new Vector(20, -20)), Archer, 100));
+			this.items[2] = (new MenuItem(this.pos.sub(new Vector(-20, 20)), Pikeman, 100));
+			this.items[3] = (new MenuItem(this.pos.sub(new Vector(20, -20)), Horseman, 100));
 		}
 		else{
 			if(this.items[0] != undefined) {
@@ -304,11 +305,13 @@ Barrack.prototype.radius = 50;
 function House(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.radius = 50;
+	this.radius = 42;
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
-	this.update = function(){};
+	this.update = function(deltaT){
+		money += deltaT / 500;
+	};
 
 }
 House.prototype = new GameObject();
@@ -322,6 +325,7 @@ function Troop () {
 	this.angle = 0;
 	this.life = 100;
 	this.enemy = undefined;
+	this.speedConst = 15;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
@@ -347,7 +351,7 @@ function Troop () {
 		else{
 			if(this.waypoint.sub(this.pos).norm() <= 3) this.setWaypoint(this.goal);
 			this.checkPath(this.waypoint);
-			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / 15));
+			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / this.speedConst));
 		}
 	};
 	this.checkPath = function(goal) {
@@ -444,5 +448,34 @@ Archer.prototype = new Troop();
 Archer.prototype.img = new Image();
 Archer.prototype.img.src = "crossbow.png";
 
+function Pikeman(pos, owner) {
+	this.pos = pos;
+	this.owner = owner;
+	this.isSelected = false;
+	this.goal = pos;
+	this.waypoint = this.goal;
+	this.range = 2 * gap;
+	this.damageConst = 60;
+}
+Pikeman.prototype = new Troop();
+Pikeman.prototype.img = new Image();
+Pikeman.prototype.img.src = "spear.png";
+
+function Horseman(pos, owner) {
+	this.pos = pos;
+	this.owner = owner;
+	this.isSelected = false;
+	this.goal = pos;
+	this.waypoint = this.goal;
+	this.range = 2 * gap;
+	this.damageConst = 60;
+//	this.radius = 32;
+	this.sqrRadius = this.radius * this.radius;
+	this.speedConst = 5;
+}
+Horseman.prototype = new Troop();
+Horseman.prototype.img = new Image();
+Horseman.prototype.img.src = "horseman.png";
+Horseman.prototype.radius = 32;
  
 main();
