@@ -20,6 +20,7 @@ function main() {
 	objects.push(new Castle(new Vector(200, 200), 1));
 	objects.push(new SwordFighter(new Vector(305, 305), 1));
 	objects.push(new SwordFighter(new Vector(400, 400), 2));
+	objects.push(new Archer(new Vector(600, 300), 1));
 //	g.fillStyle = "green";
 //	g.fillRect(0, 0, canvas.width, canvas.height);
 	//start loop
@@ -240,14 +241,18 @@ function Troop () {
 	};
 	this.setGoal = function(goal) {
 //		this.goal = new Vector(goal.x - this.width / 2, goal.y - this.height / 2);
+		var newEnemy = false;
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
 			if( o.collides(goal, this.radius)){
-				goal = o.pos.add(goal.sub(o.pos).unitVec().mul(o.radius + this.radius +  gap));
-				if(o.owner != this.owner) this.enemy = o;
+				goal = o.pos.add(this.pos.sub(o.pos).unitVec().mul(o.radius + this.radius +this.range -  gap));
+				if(o.owner != this.owner){
+					this.enemy = o;
+					newEnemy = true;
+				}
 			}
-			else this.enemy = undefined;
 		}
+		if(!newEnemy) this.enemy = undefined;
 		this.goal = goal;
 		this.setWaypoint(goal);
 	};
@@ -298,7 +303,7 @@ function Archer(pos, owner) {
 }
 Archer.prototype = new Troop();
 Archer.prototype.img = new Image();
-Archer.prototype.img.src = "swordfighter.png";
+Archer.prototype.img.src = "crossbow.png";
 
  
 main();
