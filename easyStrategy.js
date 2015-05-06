@@ -13,6 +13,9 @@ var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
 var rigthVec = new Vector(1, 0);
 var money = 200;
+var mouse = new Vector(0, 0);
+var nextBuilding = undefined;
+
 
 //functions
 function main() {
@@ -44,6 +47,15 @@ function render(deltaT) {
 //	g.fillRect(canvas.offsetLeft, canvas.offsetTop, canvas.width, canvas.height);
 	g.fillRect(0, 0, canvas.width, canvas.height);
 	objects.forEach(function(o){ o.render(deltaT) });
+	//if building to build
+	if(nextBuilding != undefined){
+		g.fillStyle = "blue";
+		g.beginPath();
+		g.arc(mouse.x, mouse.y, nextBuilding.prototype.radius, 0, TWO_PI);
+		g.fill();
+	}
+	
+	//money
 	g.fillStyle = "yellow";
 	g.beginPath();
 	g.arc(30, 30, 10, 0, TWO_PI);
@@ -54,6 +66,10 @@ function render(deltaT) {
 
 canvas.addEventListener("click", function (event) {
 	var mousePos = new Vector(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+	if(nextBuilding != undefined){
+		objects.push(new nextBuilding(mousePos, 1));
+		nextBuilding = undefined;
+	}
 //console.log(mousePos);
 	objects.forEach(function(o) {
 		//checks whether clicked or not
@@ -72,6 +88,11 @@ canvas.addEventListener("click", function (event) {
 	});
 
 });
+
+canvas.addEventListener('mousemove', function(e){ 
+    mouse.x = e.clientX || e.pageX; 
+    mouse.y = e.clientY || e.pageY 
+}, false);
 
 function between(nStart, nBetween, nEnd){
 	return (nStart <= nBetween && nBetween <= nEnd) || (nEnd <= nBetween && nBetween <= nStart);
@@ -126,7 +147,14 @@ function GameObject () {
 	};
 	this.render = function(deltaT) {
 		if(this.owner === 1) g.strokeStyle = "blue";
-		else g.strokeStyle = "red";
+		else if(this.owner === 2) g.strokeStyle = "red";
+		else{
+			g.fillStyle = "white";
+			g.strokeStyle = "white";
+			g.beginPath();
+			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+			g.fill();
+		}
 		if(this.isSelected){
 			g.fillStyle = "blue";
 			g.beginPath();
@@ -141,8 +169,27 @@ function GameObject () {
 		g.rotate(this.angle);
 		g.drawImage(this.img, - this.radius, -this.radius);
 		g.restore();
+		if(this.specialRender) this.specialRender(); 
 	};	
 }; 
+
+function MenuItem(pos, constructor, cost) {
+	this.pos = pos;
+	this.owner = 0;
+	this.radius = 16;
+	this.sqrRadius = this.radius * this.radius;
+	this.isSelected = false;
+	this.life = 100;
+	this.img = constructor.prototype.img;
+	this.update = function(deltaT) {
+		if(this.isSelected){
+			nextBuilding = constructor;
+//			console.log(constructor);
+			money -= cost;
+		}
+	};
+}
+MenuItem.prototype = new GameObject();
  
 function Castle(pos, owner) {
 	this.pos = pos;
@@ -151,9 +198,32 @@ function Castle(pos, owner) {
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
-
-	this.update = function(deltaT){
+	this.item1;
+	this.contains = function(pos){
+		if(Castle.prototype.contains.call(this, pos)){
+			if(this.item1){
+				if(this.item1.contains(pos)) this.item1.isSelected = true;
+			}
+			return true;
+		}
+	};
+	this.update = function(deltaT) {
+		if(this.item1)this.item1.update();
 		if(deltaT) money += deltaT / 2000;
+	};
+	this.specialRender = function() {
+		if(this.item1){
+			this.item1.render();
+		}
+		if(this.isSelected){
+			this.item1 = new MenuItem(
+					this.pos.sub(new Vector(Archer.prototype.radius + gap, Archer.prototype.radius)), Archer, 50);
+		}
+		else{
+			if(this.item1 != undefined) {
+				this.item1 = undefined;
+			}
+		}
 	};
 }
 Castle.prototype = new GameObject();
