@@ -23,9 +23,9 @@ var nextBuilding = undefined;
 function main() {
 	//intit
 	objects.push(new Castle(new Vector(200, 200), 1));
-	objects.push(new SwordFighter(new Vector(305, 305), 1));
-	objects.push(new SwordFighter(new Vector(400, 400), 2));
-	objects.push(new Archer(new Vector(600, 300), 1));
+//	objects.push(new SwordFighter(new Vector(305, 305), 1));
+//	objects.push(new SwordFighter(new Vector(400, 400), 2));
+//	objects.push(new Archer(new Vector(600, 300), 1));
 //	g.fillStyle = "green";
 //	g.fillRect(0, 0, canvas.width, canvas.height);
 	//start loop
@@ -205,6 +205,7 @@ function Castle(pos, owner) {
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
+	this.type = "castle";
 	this.item1;
 	this.item2;
 	this.contains = function(pos){
@@ -259,6 +260,7 @@ function Barrack(pos, owner) {
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
+	this.type = "barrack";
 	this.items = [];
 	this.contains = function(pos){
 		if(Castle.prototype.contains.call(this, pos)){
@@ -288,10 +290,10 @@ function Barrack(pos, owner) {
 			});
 		}
 		if(this.isSelected){
-			this.items[0] = (new MenuItem(this.pos.sub(new Vector(20, 20)), SwordFighter, 200));
-			this.items[1] = (new MenuItem(this.pos.sub(new Vector(-20, -20)), Archer, 100));
-			this.items[2] = (new MenuItem(this.pos.sub(new Vector(-20, 20)), Pikeman, 100));
-			this.items[3] = (new MenuItem(this.pos.sub(new Vector(20, -20)), Horseman, 100));
+			this.items[0] = (new MenuItem(this.pos.sub(new Vector(20, 20)), SwordFighter, 50));
+			this.items[1] = (new MenuItem(this.pos.sub(new Vector(-20, -20)), Archer, 50));
+			this.items[2] = (new MenuItem(this.pos.sub(new Vector(-20, 20)), Pikeman, 50));
+			this.items[3] = (new MenuItem(this.pos.sub(new Vector(20, -20)), Horseman, 50));
 		}
 		else{
 			if(this.items[0] != undefined) {
@@ -313,6 +315,7 @@ function House(pos, owner) {
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
+	this.type = "house";
 	this.update = function(deltaT){
 		money += deltaT / 500;
 	};
@@ -413,7 +416,14 @@ function Troop () {
 	this.attack = function(deltaT) {
 		if(this.enemy != undefined){
 			if(this.pos.sub(this.enemy.pos).norm() <= this.radius + this.enemy.radius + this.range){
-				this.enemy.life -= deltaT / this.damageConst;
+				var damage = this.damageConst
+				switch(this.enemy.type){
+					case "castle": damage *= 2; break;
+					case "archer": if(this.type === "horseman") damage -= 20; break;
+					case "pikeman": if(this.type === "swordfighter") damage -= 20; break;
+					case "horseman": if(this.type === "pikeman") damage -= 20; break;
+				}
+				this.enemy.life -= deltaT / damage;
 //				console.log(this.life);
 				if(this.enemy.life <= 0){
 					objects.splice(objects.indexOf(this.enemy),1);
@@ -434,6 +444,7 @@ function SwordFighter(pos, owner) {
 	this.waypoint = this.goal;
 	this.range = 2 * gap;
 	this.damageConst = 60;
+	this.type = "swordfighter";
 }
 SwordFighter.prototype = new Troop();
 SwordFighter.prototype.img = new Image();
@@ -447,6 +458,7 @@ function Archer(pos, owner) {
 	this.waypoint = this.goal;
 	this.range = 2 * gap + 100;
 	this.damageConst = 60;
+	this.type = "archer";
 }
 Archer.prototype = new Troop();
 Archer.prototype.img = new Image();
@@ -460,6 +472,7 @@ function Pikeman(pos, owner) {
 	this.waypoint = this.goal;
 	this.range = 2 * gap;
 	this.damageConst = 60;
+	this.type = "pikeman";
 }
 Pikeman.prototype = new Troop();
 Pikeman.prototype.img = new Image();
@@ -475,7 +488,8 @@ function Horseman(pos, owner) {
 	this.damageConst = 60;
 //	this.radius = 32;
 	this.sqrRadius = this.radius * this.radius;
-	this.speedConst = 5;
+	this.speedConst = 10;
+	this.type = "horseman";
 }
 Horseman.prototype = new Troop();
 Horseman.prototype.img = new Image();
