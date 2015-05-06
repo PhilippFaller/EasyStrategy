@@ -70,15 +70,6 @@ function map(value, oldMax, newMax){
  
  // classes
  
-function GameObject () {
-	this.contains = function(pos) {
-		return pos.sub(this.pos).qNorm() <= this.sqrRadius;
-	};
-	this.collides = function(pos, radius) {
-		return pos.sub(this.pos).norm() <= this.radius + radius;
-	};	
-};
-
 function Vector(x, y) {
 	this.x = x;
 	this.y = y;
@@ -111,7 +102,33 @@ function Vector(x, y) {
 		var norm = this.norm();
 		return new Vector(this.x / norm, this.y / norm) ;
 	}
-}	 
+}	
+
+function GameObject () {
+	this.contains = function(pos) {
+		return pos.sub(this.pos).qNorm() <= this.sqrRadius;
+	};
+	this.collides = function(pos, radius) {
+		return pos.sub(this.pos).norm() <= this.radius + radius;
+	};
+	this.render = function(deltaT) {
+		if(this.owner === 1) g.strokeStyle = "blue";
+		else g.strokeStyle = "red";
+		if(this.isSelected){
+			g.beginPath();
+			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+			g.fill();
+		}
+		g.beginPath();
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, map(this.life, 100, TWO_PI));
+		g.stroke();
+		g.save();
+		g.translate(this.pos.x, this.pos.y);
+		g.rotate(this.angle);
+		g.drawImage(this.img, - this.radius, -this.radius);
+		g.restore();
+	};	
+}; 
  
 function Castle(pos, owner) {
 	this.pos = pos;
@@ -150,6 +167,18 @@ function Barrack(pos, owner) {
 Barrack.prototype = new GameObject();
 
 function Troop () {
+	this.radius = 16;
+	this.sqrRadius = this.radius * this.radius;
+	this.angle = 0;
+	this.life = 100;
+	this.enemy = undefined;
+	
+	this.update = function(deltaT) {
+		if(!this.pos.equals(this.goal)) {
+			this.move(deltaT);
+		}
+		this.attack(deltaT);
+	};
 	this.move = function(deltaT) {
 //		if(this.enemy != undefined){
 //			var v = new Vector(this.enemy.pos.x, this.enemy.pos.y);
@@ -232,49 +261,34 @@ function Troop () {
 			}
 		}
 	};
-	this.render = function(deltaT) {
-		if(this.owner === 1) g.strokeStyle = "blue";
-		else g.strokeStyle = "red";
-		if(this.isSelected){
-			g.beginPath();
-			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-			g.fill();
-		}
-		g.beginPath();
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, map(this.life, 100, TWO_PI));
-		g.stroke();
-		g.save();
-		g.translate(this.pos.x, this.pos.y);
-		g.rotate(this.angle);
-		g.drawImage(this.img, - this.radius, -this.radius);
-		g.restore();
-	};
 };
 Troop.prototype = new GameObject();
 
 function SwordFighter(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.radius = 16;
-	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.goal = pos;
 	this.waypoint = this.goal;
-	this.angle = 0;
-	this.life = 100;
 	this.range = 2 * gap;
 	this.damageConst = 60;
-	this.enemy = undefined;
-	
-	this.update = function(deltaT) {
-		if(!this.pos.equals(this.goal)) {
-			this.move(deltaT);
-		}
-		this.attack(deltaT);
-	};
 }
 SwordFighter.prototype = new Troop();
 SwordFighter.prototype.img = new Image();
 SwordFighter.prototype.img.src = "swordfighter.png";
+
+function Archer(pos, owner) {
+	this.pos = pos;
+	this.owner = owner;
+	this.isSelected = false;
+	this.goal = pos;
+	this.waypoint = this.goal;
+	this.range = 2 * gap + 100;
+	this.damageConst = 60;
+}
+Archer.prototype = new Troop();
+Archer.prototype.img = new Image();
+Archer.prototype.img.src = "swordfighter.png";
+
  
 main();
