@@ -1,9 +1,20 @@
-<html>
-	<head>
-		<title> Easy Strategy </title>
-	</head>
-	<body>
-		<canvas id = "canvas" width = "1000" height = "1000"> You need a browser that is capable of HTML5 to view this page </canvas>
-		<script src = "easyStrategy.js"> </script>
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>EasyStrategy</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body bgcolor="#000000">
+<div id = "container">
+  <div id = "content">
+		<canvas id = "myCanvas"> You need a browser that is capable of HTML5 to view this page </canvas>
+        <script src = "easyStrategy.js"> </script>
+    <!-- end .content --></div>
+  <div id = "footer">
+   		<canvas id = "myMenu"> You need a browser that is capable of HTML5 to view this page </canvas>
+    <!-- end footer--> </div>
+<!-- end container--> </div>
+</body>
 </html>
