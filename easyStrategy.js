@@ -66,6 +66,10 @@ function render(deltaT) {
 canvas.addEventListener("click", function (event) {
 	var mousePos = new Vector(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
 	if(nextBuilding != undefined){
+		for(var i = 0; i < objects.length; i++){
+			var o = objects[i];
+			if(o.collides(mousePos, nextBuilding.prototype.radius)) return;
+		}
 		objects.push(new nextBuilding(mousePos, 1));
 		nextBuilding = undefined;
 	}
@@ -176,7 +180,7 @@ function MenuItem(pos, constructor, cost) {
 	this.life = 100;
 	this.img = constructor.prototype.img;
 	this.update = function(deltaT) {
-		if(this.isSelected){
+		if(this.isSelected && money >= cost){
 			nextBuilding = constructor;
 //			console.log(constructor);
 			money -= cost;
