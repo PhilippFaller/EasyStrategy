@@ -232,6 +232,23 @@ function Troop () {
 			}
 		}
 	};
+	this.render = function(deltaT) {
+		if(this.owner === 1) g.strokeStyle = "blue";
+		else g.strokeStyle = "red";
+		if(this.isSelected){
+			g.beginPath();
+			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+			g.fill();
+		}
+		g.beginPath();
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, map(this.life, 100, TWO_PI));
+		g.stroke();
+		g.save();
+		g.translate(this.pos.x, this.pos.y);
+		g.rotate(this.angle);
+		g.drawImage(this.img, - this.radius, -this.radius);
+		g.restore();
+	};
 };
 Troop.prototype = new GameObject();
 
@@ -255,26 +272,9 @@ function SwordFighter(pos, owner) {
 		}
 		this.attack(deltaT);
 	};
-	this.render = function(deltaT) {
-		if(this.owner === 1) g.strokeStyle = "blue";
-		else g.strokeStyle = "red";
-		if(this.isSelected){
-			g.beginPath();
-			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-			g.fill();
-		}
-		g.beginPath();
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, map(this.life, 100, TWO_PI));
-		g.stroke();
-		g.save();
-		g.translate(this.pos.x, this.pos.y);
-		g.rotate(this.angle);
-		g.drawImage(swordFighterImg, - this.radius, -this.radius);
-		g.restore();
-	};
 }
 SwordFighter.prototype = new Troop();
-var swordFighterImg = new Image();
-swordFighterImg.src = "/home/philipp/workspace/EasyStrategy/swordfighter.png";
+SwordFighter.prototype.img = new Image();
+SwordFighter.prototype.img.src = "swordfighter.png";
  
 main();
