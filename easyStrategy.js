@@ -148,13 +148,7 @@ function GameObject () {
 	this.render = function(deltaT) {
 		if(this.owner === 1) g.strokeStyle = "blue";
 		else if(this.owner === 2) g.strokeStyle = "red";
-		else{
-			g.fillStyle = "white";
-			g.strokeStyle = "white";
-			g.beginPath();
-			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-			g.fill();
-		}
+		else g.strokeStyle = "black";
 		if(this.isSelected){
 			g.fillStyle = "blue";
 			g.beginPath();
@@ -176,7 +170,8 @@ function GameObject () {
 function MenuItem(pos, constructor, cost) {
 	this.pos = pos;
 	this.owner = 0;
-	this.radius = 16;
+	if(constructor.prototype.radius != 16) this.radius = 32;
+	else this.radius = 16;
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
@@ -187,6 +182,13 @@ function MenuItem(pos, constructor, cost) {
 //			console.log(constructor);
 			money -= cost;
 		}
+	};
+	this.render = function (deltaT) {
+		g.fillStyle = "white";
+		g.beginPath();
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
+		g.fill();
+		g.drawImage(this.img, this.pos.x - this.radius / 2, this.pos.y - this.radius / 2, this.radius, this.radius);
 	};
 }
 MenuItem.prototype = new GameObject();
@@ -199,29 +201,44 @@ function Castle(pos, owner) {
 	this.isSelected = false;
 	this.life = 100;
 	this.item1;
+	this.item2;
 	this.contains = function(pos){
 		if(Castle.prototype.contains.call(this, pos)){
 			if(this.item1){
-				if(this.item1.contains(pos)) this.item1.isSelected = true;
+				if(this.item1.contains(pos)){
+					this.item1.isSelected = true;
+					return false;
+				}
+				else if(this.item2.contains(pos)){
+					this.item2.isSelected = true;
+					return false;
+				}
 			}
 			return true;
 		}
 	};
 	this.update = function(deltaT) {
-		if(this.item1)this.item1.update();
+		if(this.item1){
+			this.item1.update();
+			this.item2.update();
+		}
 		if(deltaT) money += deltaT / 2000;
 	};
 	this.specialRender = function() {
 		if(this.item1){
 			this.item1.render();
+			this.item2.render();
 		}
 		if(this.isSelected){
 			this.item1 = new MenuItem(
-					this.pos.sub(new Vector(Archer.prototype.radius + gap, Archer.prototype.radius)), Archer, 50);
+					this.pos.sub(new Vector(30, 30)), Barrack, 200);
+			this.item2 = new MenuItem(
+					this.pos.sub(new Vector(-30, -30)), House, 100);
 		}
 		else{
 			if(this.item1 != undefined) {
 				this.item1 = undefined;
+				this.item2 = undefined;
 			}
 		}
 	};
@@ -236,16 +253,68 @@ function Barrack(pos, owner) {
 	this.radius = 50;
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
-	this.update = function(){};
-	this.render = function(deltaT) {
-		g.beginPath();
-		if(this.isSelected)	g.fillStyle = "red";
-		else g.fillStyle = "black";
-		g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-		g.fill();
+	this.life = 100;
+	this.items = [];
+	this.contains = function(pos){
+		if(Castle.prototype.contains.call(this, pos)){
+			if(this.items[0]){
+				this.items.forEach(function(o) {
+					if(o.contains(pos)){
+						o.isSelected = true;
+						return false;
+					}
+				});
+			}
+			return true;
+		}
 	};
+	this.update = function(deltaT) {
+		if(this.items[0]){
+			this.items.forEach(function(o){
+				o.update();
+			});
+		}
+		if(deltaT) money += deltaT / 2000;
+	};
+	this.specialRender = function() {
+		if(this.items[0]){
+			this.items.forEach(function(o){
+				o.render();
+			});
+		}
+		if(this.isSelected){
+			this.items[0] = (new MenuItem(this.pos.sub(new Vector(20, 20)), SwordFighter, 200));
+			this.items[1] = (new MenuItem(this.pos.sub(new Vector(-20, -20)), Archer, 100));
+//			this.items[2] = (new MenuItem(this.pos.sub(new Vector(-20, 20)), Archer, 100));
+//			this.items[3] = (new MenuItem(this.pos.sub(new Vector(20, -20)), Archer, 100));
+		}
+		else{
+			if(this.items[0] != undefined) {
+				this.items = [];
+			}
+		}
+	};
+
 }
 Barrack.prototype = new GameObject();
+Barrack.prototype.img = new Image();
+Barrack.prototype.img.src = "barrack.png";
+Barrack.prototype.radius = 50;
+
+function House(pos, owner) {
+	this.pos = pos;
+	this.owner = owner;
+	this.radius = 50;
+	this.sqrRadius = this.radius * this.radius;
+	this.isSelected = false;
+	this.life = 100;
+	this.update = function(){};
+
+}
+House.prototype = new GameObject();
+House.prototype.img = new Image();
+House.prototype.img.src = "house.png";
+House.prototype.radius = 50;
 
 function Troop () {
 	this.radius = 16;
