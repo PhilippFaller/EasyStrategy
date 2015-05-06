@@ -257,7 +257,7 @@ function SwordFighter(pos, owner) {
 	};
 	this.render = function(deltaT) {
 		if(this.owner === 1) g.strokeStyle = "blue";
-		else g.strokeStyle = "red";w
+		else g.strokeStyle = "red";
 		if(this.isSelected){
 			g.beginPath();
 			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
