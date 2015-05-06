@@ -1,5 +1,7 @@
 //Globals
-var canvas = document.getElementById("canvas");
+var canvas = document.getElementById("myCanvas");
+//canvas.width  = window.innerWidth ;
+//canvas.height = window.innerHeight;
 var g = canvas.getContext("2d"); //graphic context
 g.lineWidth = 2;
 var frameRequest;	//saves id of the frame request to the window
