@@ -70,6 +70,9 @@ function GameObject () {
 	this.contains = function(pos) {
 		return pos.sub(this.pos).qNorm() <= this.sqrRadius;
 	};
+	this.collides = function(pos, radius) {
+		return pos.sub(this.pos).norm() <= this.radius + radius;
+	}
 	
 };
 
@@ -195,7 +198,7 @@ function Troop () {
 //		this.goal = new Vector(goal.x - this.width / 2, goal.y - this.height / 2);
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
-			if( o.contains(goal)){
+			if( o.collides(goal, this.radius)){
 				goal = o.pos.add(goal.sub(o.pos).unitVec().mul(o.radius + this.radius +  gap));
 				if(o.owner != this.owner) this.enemy = o;
 			}
