@@ -14,8 +14,8 @@ var rigthVec = new Vector(1, 0);
 function main() {
 	//intit
 	objects.push(new Castle(new Vector(200, 200), 0));
-	objects.push(new SwordFighter(new Vector(305, 305), 0));
-	objects.push(new SwordFighter(new Vector(400, 400), 1))
+	objects.push(new SwordFighter(new Vector(305, 305), 1));
+	objects.push(new SwordFighter(new Vector(400, 400), 2))
 	//start loop
 	loop();
 }
@@ -47,7 +47,7 @@ canvas.addEventListener("click", function (event) {
 		if(event.ctrlKey){//control button 
 			if(o.isSelected) o.setGoal(mousePos);
 		} else{
-			if(o.contains(mousePos)) {
+			if(o.owner === 1 && o.contains(mousePos)) {
 				o.isSelected = true;
 				selectedObject = o;
 			}
@@ -62,6 +62,10 @@ canvas.addEventListener("click", function (event) {
 
 function between(nStart, nBetween, nEnd){
 	return (nStart <= nBetween && nBetween <= nEnd) || (nEnd <= nBetween && nBetween <= nStart);
+}
+
+function map(value, oldMax, newMax){
+	return (value / oldMax) * newMax;
 }
  
  // classes
@@ -215,6 +219,19 @@ function Troop () {
 		if(movement.y < 0) this.angle = TWO_PI - this.angle;
 
 	};
+	this.attack = function(deltaT) {
+		if(this.enemy != undefined){
+			if(this.pos.sub(this.enemy.pos).norm() <= this.radius + this.enemy.radius + this.range){
+				this.enemy.life -= deltaT / this.damageConst;
+//				console.log(this.life);
+				if(this.enemy.life <= 0){
+					objects.splice(objects.indexOf(this.enemy),1);
+					this.enemy = undefined;
+				} 
+					
+			}
+		}
+	};
 };
 Troop.prototype = new GameObject();
 
@@ -228,6 +245,8 @@ function SwordFighter(pos, owner) {
 	this.waypoint = this.goal;
 	this.angle = 0;
 	this.life = 100;
+	this.range = 2 * gap;
+	this.damageConst = 60;
 	this.enemy = undefined;
 	
 	this.update = function(deltaT) {
@@ -237,30 +256,21 @@ function SwordFighter(pos, owner) {
 		this.attack(deltaT);
 	};
 	this.render = function(deltaT) {
+		if(this.owner === 1) g.strokeStyle = "blue";
+		else g.strokeStyle = "red";w
 		if(this.isSelected){
-			g.strokeStyle = "red";
 			g.beginPath();
 			g.arc(this.pos.x, this.pos.y, this.radius, 0, TWO_PI);
-			g.stroke();
+			g.fill();
 		}
+		g.beginPath();
+		g.arc(this.pos.x, this.pos.y, this.radius, 0, map(this.life, 100, TWO_PI));
+		g.stroke();
 		g.save();
 		g.translate(this.pos.x, this.pos.y);
 		g.rotate(this.angle);
 		g.drawImage(swordFighterImg, - this.radius, -this.radius);
 		g.restore();
-	};
-	this.attack = function(deltaT) {
-		if(this.enemy != undefined){
-			if(this.pos.sub(this.enemy.pos).norm() <= this.radius + this.enemy.radius + 2 * gap){
-				this.enemy.life -= deltaT / 40;
-//				console.log(this.life);
-				if(this.enemy.life <= 0){
-					objects.splice(objects.indexOf(this.enemy),1);
-					this.enemy = undefined;
-				} 
-					
-			}
-		}
 	};
 }
 SwordFighter.prototype = new Troop();
