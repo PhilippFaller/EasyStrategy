@@ -194,7 +194,7 @@ MenuItem.prototype = new GameObject();
 function Castle(pos, owner) {
 	this.pos = pos;
 	this.owner = owner;
-	this.radius = 64;
+	this.radius = 75;
 	this.sqrRadius = this.radius * this.radius;
 	this.isSelected = false;
 	this.life = 100;
