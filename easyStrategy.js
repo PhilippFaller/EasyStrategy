@@ -37,12 +37,23 @@ function loop(time) {
 	update(deltaT, time); 
 	render(deltaT);	
 	lastTime = time;
+	if(objects[0].type != "castle"){
+		window.cancelAnimationFrame(frameRequest);
+		frameRequest = window.requestAnimationFrame(lost);
+	}
+}
+
+function lost() {
+	g.font = "60px Arial";
+	g.fillStyle = "red";
+	g.fillText("You fought bravely but yet lost.", canvas.width/4, canvas.height/2);
+	window.cancelAnimationFrame(frameRequest);
 }
  
 function update(deltaT, t) {
 	objects.forEach(function(o){ o.update(deltaT) });
 	if((-10 / t) + 0.002 > Math.random()){
-		console.log(2);
+//		console.log(2);
 		var ran = Math.random() * 4;
 		var enemy;
 		var pos = new Vector(canvas.width - 50, canvas.height - 50)
@@ -344,6 +355,7 @@ function Troop () {
 	this.life = 100;
 	this.enemy = undefined;
 	this.speedConst = 15;
+	this.recCount = 0;
 	
 	this.update = function(deltaT) {
 		if(!this.pos.equals(this.goal)) {
@@ -368,12 +380,14 @@ function Troop () {
 		}
 		else{
 			if(this.waypoint.sub(this.pos).norm() <= 3) this.setWaypoint(this.goal);
+			this.recCount = 0;
 			this.checkPath(this.waypoint);
 			this.pos.addEq(this.waypoint.sub(this.pos).unitVec().mul(deltaT / this.speedConst));
 		}
 	};
 	this.checkPath = function(goal) {
 //		console.log(this.pos.x);
+		if(++this.recCount >= 10)this.setGoal(this.pos);
 		var m = (goal.y - this.pos.y) / (goal.x - this.pos.x);
 		var b = this.pos.y - m * this.pos.x;
 		var m1 = -1 / m;
@@ -429,7 +443,7 @@ function Troop () {
 			if(this.pos.sub(this.enemy.pos).norm() <= this.radius + this.enemy.radius + this.range){
 				var damage = this.damageConst
 				switch(this.enemy.type){
-					case "castle": damage *= 2; break;
+					case "castle": damage *= 8; break;
 					case "archer": if(this.type === "horseman") damage -= 20; break;
 					case "pikeman": if(this.type === "swordfighter") damage -= 20; break;
 					case "horseman": if(this.type === "pikeman") damage -= 20; break;
