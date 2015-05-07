@@ -18,7 +18,6 @@ coin.src = "coin.png";
 var mouse = new Vector(0, 0);
 var nextBuilding = undefined;
 
-
 //functions
 function main() {
 	//intit
@@ -35,13 +34,25 @@ function main() {
 function loop(time) {
 	frameRequest = window.requestAnimationFrame(loop);		//request next frame
 	var deltaT = time - lastTime;
-	update(deltaT); 
+	update(deltaT, time); 
 	render(deltaT);	
 	lastTime = time;
 }
  
-function update(deltaT) {
+function update(deltaT, t) {
 	objects.forEach(function(o){ o.update(deltaT) });
+	if((-10 / t) + 0.002 > Math.random()){
+		console.log(2);
+		var ran = Math.random() * 4;
+		var enemy;
+		var pos = new Vector(canvas.width - 50, canvas.height - 50)
+		if(ran <= 1) enemy = new SwordFighter(pos, 2);
+		else if(ran <= 2) enemy = new Archer(pos, 2);
+		else if(ran <= 3) enemy = new Pikeman(pos, 2);
+		else enemy = new Horseman(pos, 2);
+		enemy.setGoal(objects[0].pos);
+		objects.push(enemy);
+	}
 }
  
 function render(deltaT) {
