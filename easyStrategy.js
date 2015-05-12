@@ -12,7 +12,7 @@ var gap = 5;
 var TWO_PI = 2 * Math.PI;
 var lastTime = 0;
 var rigthVec = new Vector(1, 0);
-var money = 200;
+var money = 300;
 var coin = new Image();
 coin.src = "coin.png";
 var mouse = new Vector(0, 0);
@@ -107,7 +107,7 @@ canvas.addEventListener("click", function (event) {
 			}
 			else {
 				o.isSelected = false;
-				selectedObject = undefined; //TODO warum springt er hier hin?!
+				selectedObject = undefined;
 			}
 		}
 	});
@@ -419,12 +419,13 @@ function Troop () {
 		var newEnemy = false;
 		for(var i = 0; i < objects.length; i++){
 			var o = objects[i];
-			if( o.collides(goal, this.radius)){
-				goal = o.pos.add(this.pos.sub(o.pos).unitVec().mul(o.radius + this.radius +this.range -  gap));
-				if(o.owner != this.owner){
-					this.enemy = o;
-					newEnemy = true;
-				}
+			if(o != this)
+				if( o.collides(goal, this.radius)){
+					goal = o.pos.add(this.pos.sub(o.pos).unitVec().mul(o.radius + this.radius +this.range -  gap));
+					if(o.owner != this.owner){
+						this.enemy = o;
+						newEnemy = true;
+					}
 			}
 		}
 		if(!newEnemy) this.enemy = undefined;
@@ -447,6 +448,7 @@ function Troop () {
 					case "archer": if(this.type === "horseman") damage -= 20; break;
 					case "pikeman": if(this.type === "swordfighter") damage -= 20; break;
 					case "horseman": if(this.type === "pikeman") damage -= 20; break;
+					default: break;
 				}
 				this.enemy.life -= deltaT / damage;
 //				console.log(this.life);
